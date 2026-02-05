@@ -1,0 +1,103 @@
+''' This is the same as part 1, except if you take money on any round, you have to roll the die the next round. The round after that,
+you can take money or roll again.
+
+Clearly, we should be happier to cash with much smaller numbers. Spending multiple rolls to get a high number, like 18, 19, or 20, 
+makes no sense because we can only cash once, and then have to roll again. It is much better to cash more often with a wider range
+of numbers. 
+
+The first strategy is to cash when the number is above average. This intuitively seems reasonable since if we were to roll again instead
+of cashing, the resulting number would on average be lower (10.5) than what we have, making it counterproductive.
+
+An approximate way of approaching the expected value calculation is to say that it takes 2 turns on average to roll a higher than average
+number, since it has a probability of 1/2. Once we do, we have to spend a third turn cashing, and must re-roll on the 4th turn. We can expect
+an above-average number on the 5th turn, we cash on the 6th turn, and so on. So, on average, roughly, we cash every 3 turns, for an average amount
+of 15.5. So the expected total payout is around 33(15.5) = $511.50. This is quite crude, but it's a reasonable approximation.
+
+Another strategy is to cash at every opportunity. This minimizes the number of rolls. On turn 1, we can roll, then cash on turn 2. On every even
+-numbered turn we cash, and on every odd-numbered turn we roll. So we expect to win 50(10.5) = $525, since we cash 50 times for an average roll amount.
+These calculations suggest this is a better strategy than the first. 
+
+This strongly suggests an optimal strategy is heavily dependent on cashing all or almost all numbers right away, rather than re-rolling to get good
+numbers.
+'''
+
+# Now we can approach it exactly, as with Part 1.
+
+'''If we start on round 100, rolling does no good, so the only option is to cash. We win $10.50 on average.
+
+From round 99, pretending that it is round 1 (and there are only two rounds), rolling will result in an average of 10.5, which can be cashed for
+$10.50 in the final round. If we cash on round 99 instead, we will have to roll on round 100. Therefore if the amount showing at the beginning of 
+round 99 is more than 10.5 (11 or more) we should cash right away. Otherwise we should roll and try to get an above-average number.
+Assuming a random number is showing at the beginning of round 99, the expected amount won from that point on is (1/2)(10.5) + (1/2)(15.5) = $13, 
+since 15.5 is the average of the numbers 11 or greater.
+
+From round 98, if we roll, we get the situation starting from round 99, where we expect to win $13. If we want to cash on round 98, we will have to
+roll on round 99, and then can cash on round 100. On round 100 we will win $10.50. So if a 2 is showing before round 98, we win $12.50 in total, 
+and if a 3 is showing, we win $13.50. So we should re-roll 1 and 2, and cash 3 and above. Therefore if we roll on round 97, the expected payout is
+(2/20)(13) + (18/20)(11.5 + 10.5) = $21.10, since 11.5 is the average of 3 through 20, and 10.5 more is added in round 100.
+
+From round 97, if we roll, we get the situation on round 98, where we expect to win $21.10. If we instead cash on round 97, we have to roll on round 98
+and then expect to win $13 from round 99 on. Therefore if we have an 8 already, we win $21, and if we have a 9 we win $22. So 8s and lower should be
+re-rolled. With a random roll from round 96, we expect to win (8/20)(21.10) + (12/20)(14.50 + 13) = $24.94. This is because 14.5 is the average of the numbers
+we don't re-roll (9 through 20), meaning we win that much on average by cashing in round 97, and then we must roll on round 98, leading to winning another $13.
+Notably this is only slightly more than for 3 rounds, even though it involves 4 rounds. This is because we can only cash twice in either case. Having an extra 
+round increases the average rolls we get.
+
+We can continue iterating this backward. We now do the full calculation. In part 1, rolling or cashing on a certain round led to a decision on the 
+next round. In this part, rolling leads to a decision on the next round, but cashing leads to a decision on the round after that, since you must roll
+on the next round. From the perspective of each round, like round 45, you can either cash in round 45 and then get the expected amount from rolling in round
+46, or you can roll in round 45. This will allow easy iteration.
+'''
+
+# As with part 1, we have two lists - one for the expected amount won in total by rolling in that round, and one for the maximum value that should be 
+# re-rolled starting in round x (pretending both are 1-indexed).
+
+r2 = [] # Expected from rolling
+
+m2 = [] # Max number that should be re-rolled if it is showing at the beginning of the round.
+
+# From round 100, rolling wins $0, and the maximum number that should be re-rolled is 0, since none of them should be re-rolled.
+
+r2.insert(0, 0)
+m2.insert(0, 0)
+
+# Rolling from round 99 results in an average payout of $10.50, as discussed above. The maximum value that should be re-rolled
+# (from round 98) is 10. 
+
+r2.insert(0, 10.50)
+m2.insert(0, 10)
+
+# Rolling from 98 results in an average total payout of $13, and the max re-roll number is 2, as we found.
+
+r2.insert(0, 13)
+m2.insert(0, 2)
+
+# Rolling from 97 results in an average payout of $21.10, and the max re-roll number is 8. 
+# The fact that it goes 10, 2, 8 is due to the fact that you can cash twice in three rounds.
+
+r2.insert(0, 21.10)
+m2.insert(0, 8)
+
+# Rolling from 96 results in an average payout of $24.94, and if we cash on round 96 we then roll on round 97 leading to an 
+# average payout from then on of $21.10. So re-rolling 3 is a good idea, while cashing 4 is also, since $21.10 + $4 = $25.10, more than $24.94
+# The max re-roll number goes back down from 8 to 3.
+
+r2.insert(0, 24.94)
+m2.insert(0, 3)
+
+
+while len(r2) < 100 and len(m2) < 100:
+    a = r2[0]
+    b = m2[0]
+    c = (b/20)*(a) + ((20-b)/20)*(((20+b+1)/2) + r2[1])
+    r2.insert(0, c)
+    m2.insert(0, math.floor(r2[0] - r2[1]))
+
+#print(m2)
+#print(r2)
+
+'''The result shows that re-rolling anything 5 or lower on any round before round 92 is the best option. This seems reasonable.
+The total expected amount won, following the strategy implied by m2, is about $555.05. This is obviously much less than in part 1,
+since you have to spend many turns re-rolling the die. Similar to part 1, this means you win between $5 and $6 per round on average,
+supporting the strategy of re-rolling numbers 5 or lower and cashing ones that are 6 or higher.
+'''
