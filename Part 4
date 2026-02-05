@@ -1,0 +1,50 @@
+''' Another way to add a wrinkle to the game is if you can only cash fewer than 100 times. 
+
+In particular, what if you can only cash once in the game? An obvious strategy is to wait for a 20 and then cash.
+The probability that you win $20 in the first 99 rounds (since you can't win money if you get it in round 100) 
+is 1 - (19/20)^99 = 99.38 %, for an expected payout of 19.88 + 0.0062(10.50) = $19.95, since you cash a random
+number in round 100 if you didn't get a 20 in round 99. 
+This strategy, once again, is not exact, because if you fail to roll a 20 for most of the game, you should eventually
+be content with a 19, 18, etc... So we can find the optimal strategy as in the previous parts.
+'''
+
+r4 = [] # Expected total amount won by rolling in that round (pretending the list is 1-indexed)
+
+m4 = [] # Maximum value that should be re-rolled if it is showing at the beginning of that round
+
+# If you start from round 100, the best you can do is cash.
+r4.insert(0, 0)
+m4.insert(0, 0)
+
+# If you start from round 99 and you roll, you make $10.50. You should cash only if the value showing is 11 or higher.
+r4.insert(0, 10.50)
+m4.insert(0, 10)
+
+# If you start from round 98 and you roll, you have a 10/20 chance of rolling 10 or lower, meaning you roll again and make
+# $10.50, and a 10/20 chance of rolling 11 or higher, in which case you make that amount (15.5 on average). So the expected amount
+# is (1/2)(10.5) + (1/2)(15.5) = $13, as in one of the previous parts. In this case, you should cash if the value is 14 or higher,
+# re-roll if it is 12 or lower, and be indifferent if it is 13.
+r4.insert(0, 13)
+m4.insert(0, 13)
+
+# If you start from round 97 and roll, the expected amount you win is (13/20)(13) + (7/20)(17) = $14.40. Therefore you should cash if
+# the value is 15 or higher. The numbers are getting closer to 20. We can now do it recursively until we get to 20.
+r4.insert(0, 14.40)
+m4.insert(0, 14)
+
+while len(r4) < 100 and len(m4) < 100: # It is 19, not 20, since it is the maximum value you re-roll. If you re-roll 19, you are only okay with 20
+    a = r4[0]
+    b = m4[0]
+    c = (b/20)*(a) + ((20-b)/20)*(20+b+1)/2
+    r4.insert(0, c)
+    m4.insert(0, math.floor(r4[0]))
+
+
+#print(r4)
+#print(m4)
+
+# The result shows that if you roll a 19 on round 78, you should re-roll, but if you do so on round 79, you should cash it.
+# Obviously if you roll any number other than 20 before round 78, you should re-roll it.
+
+''' Amazingly, the total expected payout is around $19.98, only two cents less than $20. The fact that you leave the option of cashing
+a low number near the end instead of just a 20 adds 3 cents of expected value.'''
