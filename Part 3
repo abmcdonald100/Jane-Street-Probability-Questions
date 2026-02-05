@@ -1,0 +1,102 @@
+''' In this part, if you take money in any round, the casino has the option to re-roll the die. You can then take money next round
+with the new rolled number or roll again until you get a number you want to cash with, after which the casino has the option of rolling again.
+The casino is trying to minimize your profit. As I interpret it, when you roll, you can't cash until the next round, but if the casino rolls,
+you can cash immediately. So if you roll a 14 in round 1, you can take $14 in round 2. Then if the casino wants to re-roll and you get a 9,
+you can take $9 in round 3, or re-roll and take the amount rolled in round 4.
+
+Without the involvement of the casino, it is the same as part 1. You never have to spend a turn rolling the die without cashing it. A simple
+stategy for the casino is to re-roll above average numbers. You could then re-roll below average numbers. However, doing an approximate calculation
+will be very difficult for multiple strategies. It is probably better to do the exact calculation as in the previous two parts.
+
+We need another list this time, for the casino's thresholds.
+'''
+r3 = [] # The average amount you win from that round on by rolling.
+
+m3 = [] # The maximum value you should re-roll if it is showing at the beginning of that round.
+
+c3 = [] # The maximum value the casino wants NOT to re-roll if it is showing at the end of that round, assuming you cashed that round.
+
+# This is an important distinction. The casino acts at the end of each round, while you act at the beginning. This is better
+# than having the casino act at the beginning of the next round, since then you wouldn't know if that number was available or not.
+
+
+# Now we start filling them in.
+
+# From the perspective of round 100, you should only cash. Rolling results in 0 money earned.
+# You should not re-roll any number, so the max is 0.
+# The casino has the option at the end of the round to re-roll, but the game has already finished.
+r3.insert(0, 0)
+m3.insert(0, 0)
+c3.insert(0, 0)
+
+# From the perspective of round 99, if you roll, you get an average number of 10.5. You can cash this 
+# in round 100, and the casino has no opportunity to re-roll, since the game is over.
+r3.insert(0, 10.50)
+
+# Now the first interesting part. If you want to cash on round 99 instead, you have to consider how much
+# you can make in two rounds with the knowledge that the casino can re-roll the die. Assuming you cash on
+# round 99, you have the ability to cash in round 100 for the same amount. If the number showing is 10 or lower,
+# the casino will keep it, since they lose more money on average in round 100 by rolling. 
+c3.insert(0, 10)
+
+# If a 5 is showing at the beginning of round 99, you could make $10 without casino involvement. This is worse than $10.50, so
+# you should re-roll. If a 6, 7, 8, 9, or 10 is showing, you can make more than $10.50 by cashing twice, and the casino
+# won't intervene, since they would be giving up more on average. If an above average number is showing, you should
+# still cash, since you've already made more than $10.50, and you will make more in round 100 after the casino re-rolls.
+m3.insert(0, 5)
+
+# From the perspective of round 98, if you roll, you have a 5/20 chance of getting from 1 to 5 inclusive, in which case you roll
+# in round 99 and win $10.50 on average, a 5/20 chance of getting from 6 to 10 inclusive, in which case you make 2(8) = $16 on average,
+# since 8 is the average of those numbers and the casino won't re-roll, and a 10/20 chance of getting 11 or higher, in which case you will
+# make 15.5 + 10.5 = $26, since 15.5 is the average of 11 to 20 and the casino re-rolls, giving you $10.50 on average in round 100.
+# Therefore, if you roll in round 98, you win (5/20)(10.50) + (5/20)(16) + (10/20)(26) = $19.625, on average.
+r3.insert(0, 19.625)
+
+# Now we determine what number showing at the beginning of round 98 you should cash with instead. If you have a 6 showing, you can only
+# make $18, less than $19.625, so you should roll instead. The more complex part is if a 7 is showing, in which case you could make $21
+# by cashing the rest of the way without casino interference. (As in part 1, once you cash, and the number stays the same, you should cash the
+# rest of the way). After you have cashed for $7 in round 98, the casino knows you can win $14 for the rest of the game. They should re-roll
+# between rounds 98 and 99 only if doing so results in a lower expected payout, given how both parties will play. If they roll, they will give
+# up $19.625 on average, more than $14. They should instead only re-roll numbers 10 and higher, since that prevents giving up at least $20, more
+# more than $19.625. The casino re-rolling a 10 seems counterintuitive, since it will become 10.5 on average, but it makes sense because the casino
+# can re-roll again after round 99 if the roll is high and we cash.
+m3.insert(0, 6)
+c3.insert(0, 9)
+
+# So if you roll on round 97, you have a 6/20 chance of rolling up to 6, in which case you roll again and make $19.625 on average, a 4/20 chance of 
+# getting 7 through 10, in which case you cash for the last three rounds, making $25.50 on average, and a 10/20 chance of rolling above 10, in which
+# case you cash for that amount in round 98, for an average of $15.50, the casino rolls, and you win $19.625 for the last two rounds, for a total of 
+# $35.125 in that case. So on average it is (6/20)(19.625) + (4/20)(25.50) + (10/20)(35.125) = $28.55. 
+r3.insert(0, 28.55)
+# Therefore, from the perspective of round 97, if there were no casino involvement, if the die were showing 7, you could only cash for $28, but with an
+# 8, you could get $32. If you cash with x on round 97, the casino knows you can get 3x by cashing in the remaining 3 rounds (and given that you just cashed
+# in round 97, that is the best strategy) so it will re-roll only if 3x is greater than 28.55, which is the case when x is at least 10. So once again the 
+# casino re-rolls 10 and higher.
+m3.insert(0, 7)
+c3.insert(0, 9)
+
+# We can continue like this. For each round, you can roll and then the question reduces to the next round, since the casino can't act when you roll,
+# or cash, and then the casino re-rolls if the amount you can win in the remaining rounds is lower than the expected amount by rolling. Importantly,
+# the casino's threshold for re-rolling is always greater than or equal to yours.
+
+while len(r3) < 100 and len(m3) < 100 and len(c3) < 100:
+    a = r3[0]
+    b = m3[0]
+    x = c3[0]
+    c = (b/20)*(a) + ((x-b)/20)*((x+b+1)/2)*(len(m3)) + ((20-x)/20)*(((20+x+1)/2) + a)
+    r3.insert(0, c)
+    m3.insert(0, math.floor(r3[0]/(len(m3) + 1)))
+    c3.insert(0, math.floor(r3[0]/(len(m3) - 1))) # Since m3's length just increased by 1
+
+# HERE ARE THE FINAL RESULTS FOR PART 3. UNCOMMENT.
+print(r3)
+print(m3)
+print(c3)
+print(len(r3))
+print(len(m3))
+print(len(c3))
+
+''' As the results show, for the vast majority of the game, we should re-roll anything 8 or lower, and the casino should re-roll anything 9 or higher.
+This results in an expected payout of about $863.95. This makes sense, as it indicates we make slightly more than $8.50 per round, which gels with the fact that we
+re-roll 8s or lower.
+'''
