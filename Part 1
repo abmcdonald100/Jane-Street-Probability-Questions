@@ -1,0 +1,135 @@
+import math
+import random
+
+# Jane Street Mock Interview Probability Problem
+# Adil McDonald
+
+
+
+# Part 1
+'''You are playing a game against a casino. There is a 20-sided fair die currently showing the 1 face. 
+There are 100 rounds, and on each round you can either roll the die or take the amount of money shown 
+on the die face. What is the ideal strategy? 
+
+A simple approximate approach is to consider strategies starting with rolling until a 20 is showing, 
+and then taking money until the end. Since it takes 20 rolls on average to do this, you will have 
+80 rounds to collect $20 dollars each, for a total of $1600. 
+
+This is not completely rigorous because it is anti-symmetric - rolling a 20 5 rounds earlier (on round 15) 
+compared to 5 rounds later (on round 25) are not equally likely. The problem is nonlinear. 
+However, by comparing the $1600 figure to one calculated using different strategies, we can be reasonably 
+confident of the better and worse ones.
+
+The next obvious strategy is rolling until a 19 or 20. This will take 10 rolls on average, leaving 90 rolls 
+for cashing. The total payout on average, approximately, is 90(19.5) = $1755, since 19.5 is the average of 
+19 and 20. This is clearly better than the first strategy.
+
+Continuing with waiting until 18, 19, or 20, which takes about 7 rolls (20/3), we get a total expected payout 
+of around 93(19) = $1767. This is better than the 19, 20 strategy.
+
+Now 17, 18, 19, 20. This takes 5 rolls on average, and we get 95(18.5), which is $1757.50. This is worse than
+18, 19, 20 strategy. It is clear that continuing this path will result in worse and worse strategies. Cashing out
+a 16 rolled early on is non-optimal. 
+
+So the best simple strategy is to roll until an 18, 19, or 20 is showing, and then cash out for the rest of the game.
+
+However, this is not the optimal strategy available. An easy way to see this is to consider if you roll a 10 or lower
+for the first 97 rounds, and then roll a 17 on round 98. You can get $34 by cashing for the last two rounds, or re-roll
+a only get $20 maximum on the last round. Clearly cashing the 17 twice is better. Obviously that is astronomically unlikely, 
+but it reveals that the exact correct strategy must be more complicated. So there is a certain round where keeping
+a 17 becomes optimal. Then eventually there is a round where cashing a 16 becomes optimal, rather than trying to get something
+higher, and so on. To find the optimal strategy, we work backward from the end of the game.
+'''
+
+r1 = []
+# This will eventually be a 100 element list, with each entry being the expected amount won in total by rolling in that round
+# (The list will be indexed from 0 to 99, meaning the above statement isn't exactly true. But just treat it as a 1-indexed list.
+# This will apply for all lists and all parts)
+
+m1 = []
+# This will also be a 100 element list, where each entry is the maximum number that should be re-rolled in that round.
+# This provides a complete strategy for the game, as it prescribes an action for any roll result in any round.
+
+# We work backwards, starting from round 100.
+# On round 100, rolling means you don't win any money. So r[100] = 0
+# The maximum value that should be re-rolled is 0, as any number, including 1, should not be re-rolled 
+
+r1.insert(0, 0) 
+m1.insert(0, 0)
+
+# Now, from the perspective of round 99, rolling will result in an average of 10.5, which then results in $10.50 won in round 100.
+# Instead of that, we can cash in round 99 and 100. If we have a 5 showing before round 99, we can cash for $10 total, less than
+# $10.50. If we have a 6, we can get $12, more than $10.50. So the maximum value that should be re-rolled is 5.
+
+r1.insert(0, 10.50)
+m1.insert(0, 5)
+
+# Now, from round 98, if we re-roll, there is a 5/20 chance of getting from 1-5, which results in $10.50 won, and a 15/20 chance
+# of getting from 6-20, which results in double that amount won, an average of $28. So the expected total amount won from rolling
+# is 5/20(10.50) + 15/20(26) = 2.625 + 19.5 = 22.125. Instead, we can cash for 3 rounds. If a 7 is showing, we can get $21, while
+# if an 8 is showing, we can get $24. So 7 is the max re-roll number.
+
+r1.insert(0, 22.125)
+m1.insert(0, 7)
+
+# Now we continue iterating backward until round 1. In each step of the iteration, we calculate the amount won on average by
+# in that round. Letting m0 and r0 represent the last entered values in m and r, respectively, the quantity we want is
+# m0/20(r0) + ((20/m0)/20)(20-r0-1)(2). If the value rolled is less than m0, then r0 is the best possible outcome on average.
+# If the value rolled is more than m0, then it is better to cash.
+
+#print(r1)
+#print(m1)
+while len(r1) < 100 and len(m1) < 100: # The last additions should be when the lengths are 99
+    a = r1[0]
+    b = m1[0]
+    c = (b/20)*(a) + ((20-b)/20)*((20+b+1)/2)*(len(m1))
+    r1.insert(0, c)
+    m1.insert(0, math.floor((c/(len(m1) + 1)))) 
+    # The maximum value that should be re-rolled is the once that, when cashed for the remainder 
+    # of the game (len(m) + 1 rolls) results in less money won than can be expected from rolling instead.
+    #print(r1[0])
+    #print(m1[0])
+
+#print(r1)
+#print(m1)
+
+''' The final versions of r and m show that after the first roll, (which should obviously happen because 1 is the worst number)
+if a 17 is rolled on any round from 1 to 39 inclusive, it should be re-rolled, but an 18 should not. (It should be cashed
+for the rest of the game). If a 17 is rolled on round 40, it should be cashed out for the rest of the game, but a 16 should
+be re-rolled, etc. This provides a complete strategy - roll on round 1, re-roll if is it 17 or lower, cash until the end if 
+it is 18 or higher. If you rolled, then once again re-roll if it is 17 or lower. If you roll on round 40, meaning you haven't
+gotten an 18, 19, or 20 yet, then cash out a 17 but re-roll a 16. The nth entry in m shows the maximum number that should be 
+re-rolled on that turn. Once you cash once, you cash for the rest of the game. This is intuitively correct, because it is less
+likely for you to get a larger number with fewer rounds.
+
+This is a slightly better strategy than the one we initially found as the best simple one, which was rolling until at least an 18
+is showing. This is very close to that, as we roll until an 18 for the first 39 rounds. But if we haven't gotten one by the 40th
+round, we should accept a 17. And eventually we accept a 16, and so forth. The chance of not rolling at least an 18 for the first 39 
+rounds is only around 1/600, so the difference between these strategies will very rarely be felt. But strictly speaking, this is 
+the best one.
+
+The expected amount won in the game, using the strategy implied by m1, rounding up to the nearest cent, is $1,773.34. 
+Notably, this means you win more than $17 per round, and in fact almost $18, on average. This supports the idea that re-rolling a 17, 
+until you are many rounds deep, is optimal.
+'''
+
+
+# Part 1 BONUS
+
+''' An interesting extension of part 1 is to determine how many rounds the game would have to be so that on round 1 you should re-roll
+18 and lower, and then separately 19 and lower, meaning you only accept a 20. This is a simple extension of the loop in part 1. 
+'''
+while m1[0] < 19:
+    a = r1[0]
+    b = m1[0]
+    c = (b/20)*(a) + ((20-b)/20)*((20+b+1)/2)*(len(m1))
+    r1.insert(0, c)
+    m1.insert(0, math.floor((c/(len(m1) + 1)))) 
+
+#print(m1)
+#print(len(m1))
+
+''' So the game would have to be 127 rounds for it to be optimal to re-roll anything other than 19 and 20 after round 1, and 390 rounds
+to re-roll everything other than 20 after round 1. However, if the game were 390 rounds and you rolled a 19 in round 2, you should cash it
+for the rest of the game.
+'''
